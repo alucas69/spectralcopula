@@ -10,10 +10,11 @@ registerDoParallel(cores = nr_free_cores)
 library(latex2exp)
 library(ggplot2)
 library(ggpubr)
+library(stringi)
 
 ## set dimensions and nr of snapshots
-nr_replications = 10
-dim_T = 1500
+nr_replications = 100
+dim_T = 250
 q_proportion = 0.5
 meanidx = 4 # 1: mean + sd, 4: median + mad, 7: quantiles
 dim_N = round(q_proportion * dim_T)
@@ -149,7 +150,8 @@ make_frame = function(dim_snap, estimated_spectra,
       theme(axis.text=element_text(size=16), axis.title=element_text(size=18,face="bold"),
             legend.text = element_text(size=16), legend.title = element_text(size=25)) +
       ylab(TeX(paste0("$\\lambda^{\\", whichone, "}$"))) + 
-      labs(col=unname(TeX(paste0("$\\lambda^{\\", whichone, "}$")))) +
+      # labs(col=unname(TeX(paste0("$\\lambda^{\\", whichone, "}$")))) +
+      labs(col=unname(" ")) +
       guides(fill = "none")
     plot(gg1)
   }
@@ -206,12 +208,12 @@ for (iter0 in 1:nr_replications) {
     estim = optim(
       x0,
       function(x) {
-        return(-llik1(yW[ , i1], mu[i1], x[1], x[2], mu[i1])$llik)
+        return(-llik1_cpp(yW[ , i1], mu[i1], x[1], x[2], mu[i1])$llik)
       },
       method = "BFGS",
       control = list(maxit = 1000)
     )
-    llik1(yW[ , i1], mu[i1], estim$par[1], estim$par[2], mu[i1])$ft
+    llik1_cpp(yW[ , i1], mu[i1], estim$par[1], estim$par[2], mu[i1])$ft
   }
   Gas_ft_1[ , iter0] = Gas_ft[ , 1]
   Gas_ft_N[ , iter0] = Gas_ft[ , dim_N]
@@ -225,12 +227,12 @@ for (iter0 in 1:nr_replications) {
     estim = optim(
       x0,
       function(x) {
-        return(-llik1(yW[ , i1], lambda[i1], x[1], x[2], lambda[i1])$llik)
+        return(-llik1_cpp(yW[ , i1], lambda[i1], x[1], x[2], lambda[i1])$llik)
       },
       method = "BFGS",
       control = list(maxit = 1000)
     )
-    llik1(yW[ , i1], lambda[i1], estim$par[1], estim$par[2], lambda[i1])$ft
+    llik1_cpp(yW[ , i1], lambda[i1], estim$par[1], estim$par[2], lambda[i1])$ft
   }
   GasSS_ft_1[ , iter0] = GasSS_ft[ , 1]
   GasSS_ft_N[ , iter0] = GasSS_ft[ , dim_N]
@@ -270,6 +272,6 @@ gg2 = make_frame(dim_snap, estimated_spectra,
                  Gas_ft_1_summ, Gas_ft_N_summ, 
                  GasS_ft_1_summ, GasS_ft_N_summ, 
                  meanidx = 7, withplot = TRUE, withband = TRUE,
-                 whichone = "min", ymax = 5)
+                 whichone = "min", ymax = 50)
 ggarrange(gg1, gg2, ncol = 2, common.legend = TRUE)
 
